@@ -9,12 +9,12 @@ RUN npm run build
 FROM node:20-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
+RUN apk add --no-cache openssl && \
+    addgroup -S nestjs && adduser -S nestjs -G nestjs
 COPY package*.json ./
 RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
-VOLUME ["/app/certs"]
-EXPOSE 10100 20100
+EXPOSE 10401 20401
 USER nestjs
-HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:10100/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:10401/health || exit 1
 CMD ["node", "dist/main"]
