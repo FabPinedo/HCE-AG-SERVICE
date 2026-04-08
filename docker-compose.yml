@@ -12,6 +12,8 @@ services:
       NODE_ENV: production
     volumes:
       - ./certs:/app/certs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:10100/health || exit 1"]
