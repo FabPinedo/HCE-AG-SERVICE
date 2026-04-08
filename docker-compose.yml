@@ -1,0 +1,20 @@
+# docker-compose.yml — ag-pruebas-ag
+# Uso: docker compose up -d  |  docker compose down  |  docker compose build
+
+services:
+  ag-pruebas-ag:
+    build: .
+    ports:
+      - "${PORT:-10100}:${PORT:-10100}"
+      - "${SSL_PORT:-20100}:${SSL_PORT:-20100}"
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ./certs:/app/certs:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:10100/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
