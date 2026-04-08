@@ -5,13 +5,13 @@ services:
   ag-pruebas-ag:
     build: .
     ports:
-      - "${PORT:-10100}:${PORT:-10100}"
-      - "${SSL_PORT:-20100}:${SSL_PORT:-20100}"
+      - "${PORT:-10401}:${PORT:-10401}"
+      - "${SSL_PORT:-20401}:${SSL_PORT:-20401}"
     env_file: .env
     environment:
       NODE_ENV: production
     volumes:
-      - ./certs:/app/certs:ro
+      - ${CERT_PATH:-/proyectos/certs}:${CERT_PATH:-/proyectos/certs}:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
