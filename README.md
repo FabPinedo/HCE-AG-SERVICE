@@ -2,7 +2,7 @@
 
 > API Gateway generado por **Jarvis Platform** — 2/4/2026
 
-Proxy inverso con rate limiting, CORS, SSL opcional y validación JWT.
+Proxy inverso con rate limiting, CORS, SSL opcional y validación JWT local (sin llamada HTTP al Auth Service).
 
 ## Servicios proxiados
 
@@ -27,8 +27,8 @@ Proxy inverso con rate limiting, CORS, SSL opcional y validación JWT.
 | `RATE_LIMIT_TTL` | — | `60` | Ventana de rate limiting en segundos |
 | `RATE_LIMIT_MAX` | — | `100` | Máximo de requests por ventana por IP |
 | `REQUEST_TIMEOUT` | — | `120000` | Timeout de requests HTTP salientes en ms |
+| `JWT_SECRET` | ✓ | — | Mismo valor que `JWT_SECRET` del Auth Service — el gateway valida el token **localmente** con `jsonwebtoken` sin llamar al Auth Service |
 | `AUTH_URL` | ✓ | — | URL base del Auth Service — usada para **proxy** de rutas `/auth/*` |
-| `AUTH_SERVICE_URL` | ✓ | — | URL base del Auth Service — usada por `JwtAuthGuard` para **validar tokens**. Normalmente el mismo valor que `AUTH_URL` |
 | `USE_SSL` | — | `false` | `true` activa el servidor HTTPS adicional |
 | `SSL_PORT` | — | `20401` | Puerto HTTPS (solo si `USE_SSL=true`) |
 | `CERT_PATH` | — | `/app/certs` | Ruta a los certificados SSL (`server.crt` + `server.key` o `server.pfx`) |
@@ -36,8 +36,10 @@ Proxy inverso con rate limiting, CORS, SSL opcional y validación JWT.
 | `KAFKA_BROKER` | — | `localhost:9092` | Broker(s) Kafka (coma-separados) |
 | `KAFKA_TOPIC` | — | `platform.logs` | Topic donde se publican eventos de gateway |
 
-> **Nota:** `AUTH_URL` y `AUTH_SERVICE_URL` apuntan al mismo servicio pero
-> se usan en contextos distintos. Si el Auth Service cambia de URL, actualizar ambas.
+> **Nota sobre validación JWT (S6):** El guard usa `jsonwebtoken` directamente con `JWT_SECRET`.
+> Si el usuario hace logout, la cookie se elimina en el cliente pero el token sigue siendo criptográficamente
+> válido hasta que expire (`JWT_EXPIRES_IN`, default 4h). Esto es aceptable con TTL corto y
+> cookie `httpOnly` eliminada al logout.
 
 ## Rate Limiting
 
