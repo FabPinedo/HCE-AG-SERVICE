@@ -21,7 +21,13 @@ export class GatewayService {
     const baseUrl = this.svcMap[`/${prefix}`];
     if (!baseUrl) return res.status(404).json({ error: `Service /${prefix} not found` });
 
-    const targetUrl = `${baseUrl}${req.url}`;
+    // Prevenir path traversal antes de construir la URL destino
+    const rawUrl = req.url ?? '/';
+    if (rawUrl.includes('..') || /%2e%2e/i.test(rawUrl)) {
+      return res.status(400).json({ error: 'Ruta no permitida' });
+    }
+
+    const targetUrl = `${baseUrl}${rawUrl}`;
     const headers   = { ...req.headers };
     delete headers['host'];
     delete headers['connection'];
