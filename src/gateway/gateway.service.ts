@@ -13,7 +13,9 @@ export class GatewayService {
     private readonly cfg:  ConfigService,
   ) {
     this.svcMap = {
-      '/auth': this.cfg.get('AUTH_URL', 'http://localhost:10101'),
+      '/auth':          this.cfg.get('AUTH_URL',          'http://localhost:10402'),
+      '/practitioners': this.cfg.get('PRACTITIONER_URL',  'http://localhost:3000'),
+      '/files':         this.cfg.get('MEDIA_URL',         'http://localhost:3001'),
     };
   }
 
@@ -57,6 +59,58 @@ export class GatewayService {
       return res.status(r.status).json(r.data);
     } catch (err: any) {
       return res.status(502).json({ error: 'Bad Gateway', detail: err.message });
+    }
+  }
+
+  async proxyBinaryRequest(req: Request, res: Response, prefix: string) {
+    const baseUrl = this.svcMap[`/${prefix}`];
+    if (!baseUrl) return res.status(404).json({ error: `Service /${prefix} not found` });
+
+    const rawUrl = req.url ?? '/';
+    if (rawUrl.includes('..') || /%2e%2e/i.test(rawUrl)) {
+      return res.status(400).json({ error: 'Ruta no permitida' });
+    }
+
+    const targetUrl = `${baseUrl}${rawUrl}`;
+    const headers   = { ...req.headers };
+    delete headers['host'];
+    delete headers['connection'];
+    delete headers['content-length'];
+
+    if (!headers['authorization'] && req.cookies?.['access_token']) {
+      headers['authorization'] = `Bearer ${req.cookies['access_token']}`;
+    }
+
+    try {
+      const r = await firstValueFrom(
+        this.http.request({
+          method:         req.method as any,
+          url:            targetUrl,
+          headers,
+          data:           req.body,
+          responseType:   'stream',
+          validateStatus: () => true,
+        }),
+      );
+
+      // Reenviar headers binarios relevantes al cliente
+      const binaryHeaders = [
+        'content-type', 'content-disposition', 'cache-control',
+        'accept-ranges', 'content-range', 'content-length',
+      ];
+      for (const h of binaryHeaders) {
+        if (r.headers[h]) res.setHeader(h, r.headers[h]);
+      }
+
+      const setCookie = r.headers['set-cookie'];
+      if (setCookie) res.setHeader('set-cookie', setCookie);
+
+      res.status(r.status);
+      (r.data as NodeJS.ReadableStream).pipe(res);
+    } catch (err: any) {
+      if (!res.headersSent) {
+        res.status(502).json({ error: 'Bad Gateway', detail: err.message });
+      }
     }
   }
 

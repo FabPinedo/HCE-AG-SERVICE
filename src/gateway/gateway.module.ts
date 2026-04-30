@@ -3,6 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GatewayController } from './gateway.controller';
 import { GatewayService } from './gateway.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { GatewayService } from './gateway.service';
     }),
   ],
   controllers: [GatewayController],
-  providers: [GatewayService],
+  providers: [GatewayService, JwtAuthGuard],
 })
 export class GatewayModule {}
